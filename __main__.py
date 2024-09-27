@@ -1,10 +1,24 @@
 import torch
 from bidict import bidict
+import click
 import pickle
 import os
 from collections.abc import Hashable
 from src.IdeologyWatch.datahandler import DataHandler
 from src.IdeologyWatch.classifier import IdeologyClassifier
+
+
+def load_or_preprocess() -> (
+    tuple[
+        dict[str, torch.Tensor], tuple[bidict[int, Hashable], ...], IdeologyClassifier
+    ]
+):
+    if os.path.exists("model_inputs.pickle") and os.path.exists(
+        "index_to_label.pickle"
+    ):
+        return load_preprocessed()
+    else:
+        return preprocess()
 
 
 def preprocess() -> (
@@ -59,19 +73,47 @@ def load_preprocessed() -> (
     return model_inputs, index_to_label, classifier
 
 
-if __name__ == "__main__":
+@click.group()
+def cli():
+    pass
 
-    if os.path.exists("model_inputs.pickle") and os.path.exists(
-        "index_to_label.pickle"
-    ):
-        model_inputs, index_to_label, classifier = load_preprocessed()
-    else:
-        model_inputs, index_to_label, classifier = preprocess()
 
+@cli.command(help="Resume training from checkpoint.")
+@click.option(
+    "--export-checkpoints",
+    default=None,
+    required=False,
+    flag_value=60,
+    help="Export checkpoints after specified number of minutes.",
+)
+def resume(export_checkpoints):
+    model_inputs, index_to_label, classifier = load_or_preprocess()
+    classifier.resume_training(
+        model_input=model_inputs,
+        batch_size=32,
+        export_checkpoints=export_checkpoints,
+        export_complete=True,
+    )
+
+
+@cli.command(help="Start training.")
+@click.option(
+    "--export-checkpoints",
+    default=None,
+    required=False,
+    flag_value=60,
+    help="Export checkpoints after specified number of minutes.",
+)
+def start(export_checkpoints):
+    model_inputs, index_to_label, classifier = load_or_preprocess()
     classifier.start_training(
         model_input=model_inputs,
         # model_input=model_input,
         batch_size=32,
-        export_checkpoints=True,
+        export_checkpoints=export_checkpoints,
         export_complete=True,
     )
+
+
+if __name__ == "__main__":
+    cli()

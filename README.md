@@ -7,7 +7,17 @@ To get started,
 
 1. Create a python 3.11 environment and install requirements from requirements.txt
 2. Download `speeches.feather`, `politicians.feather` and `factions.feather` from [Open Discourse](https://doi.org/10.7910/DVN/FIKIBO) (Richter et al., 2020) into `./data`.
-3. Run project from root folder.
+3. Run project from root folder:
+    ```shell
+    # start training
+    python . start
+
+    # resume training
+    python . resume
+    
+    # see more options
+    python . --help
+    ```
 
 ## Current status
 
